@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GenAI Assistant</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px;
+           margin: 40px auto; padding: 0 16px; }
+    #log { border: 1px solid #ddd; border-radius: 8px; padding: 12px;
+           min-height: 240px; margin-bottom: 12px; }
+    .msg { margin: 8px 0; } .user { font-weight: 600; }
+    input, button { padding: 10px; font-size: 15px; }
+    input { width: 70%; } button { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>GenAI Assistant</h1>
+  <label><input type="checkbox" id="agent" /> Use agent (actions)</label>
+  <div id="log"></div>
+  <input id="q" placeholder="Ask something..." />
+  <button onclick="send()">Send</button>
+  <script>
+    const log = document.getElementById('log');
+    function add(role, text) {
+      const d = document.createElement('div');
+      d.className = 'msg';
+      d.innerHTML = '<span class="user">' + role + ':</span> ' + text;
+      log.appendChild(d); log.scrollTop = log.scrollHeight;
+    }
+    async function send() {
+      const inp = document.getElementById('q');
+      const msg = inp.value.trim(); if (!msg) return;
+      add('You', msg); inp.value = '';
+      const res = await fetch('http://localhost:8000/chat', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ message: msg,
+                               use_agent: document.getElementById('agent').checked })
+      });
+      const data = await res.json();
+      add('Assistant', data.answer + (data.sources ?
+          ' <em>(' + data.sources.join(', ') + ')</em>' : ''));
+    }
+    document.getElementById('q').addEventListener('keydown',
+        e => { if (e.key === 'Enter') send(); });
+  </script>
+</body>
+</html>
